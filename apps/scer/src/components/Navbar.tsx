@@ -1,6 +1,7 @@
 
 import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
+import { NotificationBell } from "./NotificationBell";
 
 export function Navbar() {
   return (
@@ -16,6 +17,7 @@ export function Navbar() {
       <Link href="/analytics" className="text-sm font-medium hover:text-red-600 transition-colors">Intelligence</Link>
       <Link href="/audit" className="text-sm font-medium hover:text-red-600 transition-colors">Audit</Link>
       <div className="flex-1" />
+      <NotificationBell />
       <div className="text-sm font-medium text-neutral-500">Admin</div>
     </nav>
   );
