@@ -8,8 +8,14 @@ const prisma = new PrismaClient();
  * Returns the current user (for MVP, returns the first ADMIN user)
  * In production, this would check session/JWT to determine the authenticated user
  */
-export async function GET() {
+export const dynamic = 'force-dynamic';
+
+export async function GET(req: Request) {
+  console.log("EXECUTING GET /api/user/current");
   try {
+    const allUsers = await prisma.user.findMany();
+    console.log("ALL USERS IN DB-SCER:", allUsers);
+
     // For MVP: fetch the ADMIN user seeded in db-scer
     const adminUser = await prisma.user.findFirst({
       where: { role: "ADMIN" },

@@ -68,7 +68,7 @@ export function NotificationBell() {
       {/* Bell Icon Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 transition-colors"
+        className="relative p-2 text-slate-300 hover:text-white transition-colors"
         aria-label="Notifications"
       >
         <Bell className="w-5 h-5" />
