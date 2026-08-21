@@ -1,0 +1,1 @@
+export { prisma, PrismaClient } from "@scer/db-geopulse";

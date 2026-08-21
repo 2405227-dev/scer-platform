@@ -584,6 +584,31 @@ function IncidentCard({ incident }: { incident: Incident }) {
             </p>
           </div>
 
+          <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-950/20 p-3.5">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <Navigation className="h-4 w-4" />
+              </div>
+              <div>
+                <div className="text-[9px] font-black uppercase tracking-wider text-emerald-400">
+                  GeoPulse Geospatial Radar
+                </div>
+                <div className="text-xs text-slate-300">
+                  Match closest capable units & calculate response ETA
+                </div>
+              </div>
+            </div>
+            <a
+              href="http://localhost:3002"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-[11px] font-black text-slate-950 bg-emerald-400 hover:bg-emerald-300 px-3.5 py-2 rounded-xl transition shadow-lg shadow-emerald-500/20 shrink-0"
+            >
+              <span>Dispatch on Radar</span>
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </a>
+          </div>
+
           <div className="mt-5">
             <IncidentActions
               incidentId={incident.id}

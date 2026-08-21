@@ -1,29 +1,115 @@
-
 generator client {
   provider = "prisma-client-js"
 }
+
 datasource db {
   provider = "sqlite"
   url      = "file:./dev.db"
 }
+
 model GeoResource {
-  id          String       @id @default(cuid())
-  name        String
-  capabilities Capability[]
+  id                  String          @id @default(cuid())
+  name                String
+  type                String          @default("GENERAL") // MEDICAL, SECURITY, FIRE, EMERGENCY_RESPONSE, GENERAL
+  status              String          @default("AVAILABLE") // AVAILABLE, BUSY, OFFLINE, EN_ROUTE, ON_SCENE
+  latitude            Float
+  longitude           Float
+  phone               String?
+  email               String?
+  speedKmH            Float           @default(30.0)
+  currentAssignmentId String?
+  capabilities        Capability[]
+  assignments         GeoAssignment[]
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@index([status])
+  @@index([type])
 }
+
 model Capability {
   id            String      @id @default(cuid())
   name          String
-  geoResource   GeoResource @relation(fields: [geoResourceId], references: [id])
+  description   String?
+  geoResource   GeoResource @relation(fields: [geoResourceId], references: [id], onDelete: Cascade)
   geoResourceId String
+
+  @@index([geoResourceId])
 }
+
+model GeoIncident {
+  id                  String              @id @default(cuid())
+  externalId          String?             // Sync with SCER Incident ID
+  title               String
+  type                String              // MEDICAL_EMERGENCY, FIRE_HAZARD, SECURITY_BREACH, STRUCTURAL_HAZARD, HAZMAT
+  severity            String              // CRITICAL, HIGH, MEDIUM, LOW, RESOLVED
+  status              String              @default("REPORTED") // REPORTED, ANALYZING, ASSIGNED, DISPATCHED, EN_ROUTE, ON_SCENE, RESOLVED, CLOSED
+  location            String
+  latitude            Float
+  longitude           Float
+  requiredCapability  String              @default("GENERAL") // MEDICAL, SECURITY, FIRE, GENERAL
+  description         String?
+  assignedResponderId String?
+  assignments         GeoAssignment[]
+  recommendations     GeoRecommendation[]
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([status])
+  @@index([severity])
+  @@index([externalId])
+}
+
+model GeoAssignment {
+  id                   String      @id @default(cuid())
+  incidentId           String
+  incident             GeoIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  responderId          String
+  responder            GeoResource @relation(fields: [responderId], references: [id], onDelete: Cascade)
+  distanceKm           Float
+  estimatedTimeMinutes Float
+  status               String      @default("DISPATCHED") // DISPATCHED, ACCEPTED, EN_ROUTE, ON_SCENE, COMPLETED, CANCELLED
+  assignedAt           DateTime    @default(now())
+  acceptedAt           DateTime?
+  arrivedAt            DateTime?
+  completedAt          DateTime?
+
+  @@index([incidentId])
+  @@index([responderId])
+  @@index([status])
+}
+
 model GeoRecommendation {
-  id        String   @id @default(cuid())
-  score     Float
-  createdAt DateTime @default(now())
+  id                    String       @id @default(cuid())
+  incidentId            String?
+  incident              GeoIncident? @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  responderId           String?
+  score                 Float
+  distanceKm            Float?
+  etaMinutes            Float?
+  capabilityScore       Float?
+  availabilityScore     Float?
+  proximityScore        Float?
+  speedScore            Float?
+  severityPriorityScore Float?
+  breakdownJson         String?      // JSON string of metric breakdown
+  rationale             String?
+  createdAt             DateTime     @default(now())
+
+  @@index([incidentId])
+  @@index([responderId])
 }
+
 model GeoZone {
-  id   String @id @default(cuid())
-  name String
-  type String
+  id              String  @id @default(cuid())
+  name            String
+  type            String  // SAFE, HIGH_RISK, CRITICAL, SERVICE, RESTRICTED
+  riskLevel       String  @default("LOW") // CRITICAL, HIGH, MEDIUM, LOW
+  latitude        Float   @default(20.2961)
+  longitude       Float   @default(85.8245)
+  radiusMeters    Float   @default(250)
+  coordinatesJson String? // Optional polygon/boundary array JSON
+
+  @@index([type])
+  @@index([riskLevel])
 }

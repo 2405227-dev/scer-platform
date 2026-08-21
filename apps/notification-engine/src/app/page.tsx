@@ -34,7 +34,7 @@ export default async function NotificationDashboard() {
             </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-4">
-                {rules.map((rule) => (
+                {rules.map((rule: any) => (
                   <div key={rule.id} className="p-4 border rounded-md shadow-sm bg-white">
                     <div className="flex flex-col gap-2">
                       <div className="text-xs font-semibold text-slate-500 tracking-wider">IF</div>
@@ -74,7 +74,7 @@ export default async function NotificationDashboard() {
                     <TableRow>
                       <TableCell colSpan={3} className="text-center py-8 text-slate-500">No notifications dispatched.</TableCell>
                     </TableRow>
-                  ) : notifications.map(notif => (
+                  ) : notifications.map((notif: any) => (
                     <TableRow key={notif.id}>
                       <TableCell className="text-xs text-slate-500">{new Date(notif.createdAt).toLocaleTimeString()}</TableCell>
                       <TableCell className="font-medium text-sm">{notif.message}</TableCell>

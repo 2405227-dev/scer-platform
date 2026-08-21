@@ -33,7 +33,7 @@ export default async function ResourcesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {resources.map((resource) => (
+            {resources.map((resource: any) => (
               <TableRow key={resource.id}>
                 <TableCell className="font-medium">{resource.name}</TableCell>
                 <TableCell>{resource.type}</TableCell>

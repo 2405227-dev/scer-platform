@@ -34,7 +34,7 @@ export default async function RespondersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {responders.map((responder) => (
+            {responders.map((responder: any) => (
               <TableRow key={responder.id}>
                 <TableCell className="font-medium">{responder.name}</TableCell>
                 <TableCell>

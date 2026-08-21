@@ -37,7 +37,7 @@ export default async function IncidentsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {incidents.map((incident) => (
+            {incidents.map((incident: any) => (
               <TableRow key={incident.id}>
                 <TableCell className="font-medium text-xs text-neutral-500">{incident.id}</TableCell>
                 <TableCell className="font-medium">{incident.type}</TableCell>

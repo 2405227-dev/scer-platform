@@ -63,7 +63,7 @@ export default async function AudioEngineDashboard() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="font-medium text-slate-700">Active Keywords</span>
-                <span className="text-slate-500">{keywords.map(k => k.keyword).join(", ")}</span>
+                <span className="text-slate-500">{keywords.map((k: any) => k.keyword).join(", ")}</span>
               </div>
             </CardContent>
           </Card>
@@ -77,7 +77,7 @@ export default async function AudioEngineDashboard() {
             <CardContent>
               {webhooks.length > 0 ? (
                 <ul className="space-y-2 text-sm text-slate-600 break-all">
-                  {webhooks.map(w => (
+                  {webhooks.map((w: any) => (
                     <li key={w.id} className="p-2 bg-slate-100 rounded border border-slate-200">{w.url}</li>
                   ))}
                 </ul>
@@ -112,7 +112,7 @@ export default async function AudioEngineDashboard() {
                       <TableCell colSpan={4} className="text-center py-8 text-slate-500">No events recorded.</TableCell>
                     </TableRow>
                   )}
-                  {events.map((event) => (
+                  {events.map((event: any) => (
                     <TableRow key={event.id}>
                       <TableCell className="text-slate-500">{new Date(event.createdAt).toLocaleTimeString()}</TableCell>
                       <TableCell className="font-medium text-slate-900">{event.keyword}</TableCell>
