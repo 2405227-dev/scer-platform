@@ -1,44 +1,22 @@
 
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@scer/db-audio";
+import { processDistressDetection } from "@/lib/detection-service";
 
-const prisma = new PrismaClient();
+export const dynamic = "force-dynamic";
 
 export async function POST() {
   try {
-    const event = await prisma.audioDetectionEvent.create({
-      data: {
-        keyword: "HELP",
-        confidence: 0.94
-      }
+    const result = await processDistressDetection({
+      keyword: "HELP",
+      location: "North Gate - Sector A",
+      source: "AUDIO_ENGINE_SIMULATOR",
     });
 
-    const webhooks = await prisma.audioWebhook.findMany();
-    
-    // Fire webhooks
-    for (const webhook of webhooks) {
-      try {
-        await fetch(webhook.url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            event: "audio.distress.detected",
-            data: {
-              keyword: "HELP",
-              confidence: 0.94,
-              timestamp: event.createdAt,
-              location: "North Gate", // Mock hardware location
-            }
-          })
-        });
-      } catch (err) {
-        console.error("Failed to call webhook", webhook.url);
-      }
-    }
-
-    return NextResponse.json({ success: true, event });
+    return NextResponse.json({ success: true, event: result.detection, emergencyEvent: result.emergencyEvent });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to simulate" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Failed to simulate detection";
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
+
 
