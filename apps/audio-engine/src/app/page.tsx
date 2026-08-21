@@ -47,10 +47,10 @@ export default async function AudioEngineDashboard() {
         </div>
         <div className="flex items-center gap-4">
           <span className="text-sm font-medium flex items-center gap-2">
-            Engine Config: {config?.isActive ? (
-              <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white">ACTIVE</Badge>
+            Engine Status: {process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY ? (
+              <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white">READY</Badge>
             ) : (
-              <Badge variant="secondary">DISABLED</Badge>
+              <Badge className="bg-orange-500 hover:bg-orange-600 text-white border-none">DEGRADED</Badge>
             )}
           </span>
         </div>
@@ -148,8 +148,9 @@ export default async function AudioEngineDashboard() {
                   <TableHeader>
                     <TableRow className="bg-slate-50/75 text-xs">
                       <TableHead className="font-semibold text-slate-700">Time</TableHead>
-                      <TableHead className="font-semibold text-slate-700">Keyword(s)</TableHead>
-                      <TableHead className="font-semibold text-slate-700">Recognition Confidence</TableHead>
+                      <TableHead className="font-semibold text-slate-700">Detected Intent</TableHead>
+                      <TableHead className="font-semibold text-slate-700">Type / Lang</TableHead>
+                      <TableHead className="font-semibold text-slate-700">Confidence</TableHead>
                       <TableHead className="font-semibold text-slate-700">Severity</TableHead>
                       <TableHead className="font-semibold text-slate-700">Status</TableHead>
                       <TableHead className="font-semibold text-slate-700">Source</TableHead>
@@ -158,7 +159,7 @@ export default async function AudioEngineDashboard() {
                   <TableBody>
                     {events.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-12 text-slate-500">
+                        <TableCell colSpan={7} className="text-center py-12 text-slate-500">
                           <ShieldAlert className="w-8 h-8 mx-auto mb-2 text-slate-300" />
                           <p className="font-medium">No distress events recorded yet</p>
                           <p className="text-xs text-slate-400 mt-1">
@@ -181,19 +182,29 @@ export default async function AudioEngineDashboard() {
                             })}
                           </TableCell>
                           <TableCell className="font-bold text-slate-900">
-                            <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
-                              {event.keyword}
+                            <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200" title={event.keyword}>
+                              {event.keyword.length > 20 ? event.keyword.substring(0, 20) + "..." : event.keyword}
                             </span>
+                          </TableCell>
+                          <TableCell className="text-slate-600 font-mono text-[11px]">
+                            {event.emergencyType || "DISTRESS"} 
+                            {event.language ? ` (${event.language})` : ""}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1.5">
-                              <span className="font-semibold">{confidencePercent}%</span>
-                              <div className="w-12 bg-slate-200 rounded-full h-1.5 hidden sm:block">
-                                <div
-                                  className="bg-blue-600 h-1.5 rounded-full"
-                                  style={{ width: `${Math.min(100, Math.max(10, Number(confidencePercent)))}%` }}
-                                />
-                              </div>
+                              {event.confidence > 0 ? (
+                                <>
+                                  <span className="font-semibold">{confidencePercent}%</span>
+                                  <div className="w-12 bg-slate-200 rounded-full h-1.5 hidden sm:block">
+                                    <div
+                                      className="bg-blue-600 h-1.5 rounded-full"
+                                      style={{ width: `${Math.min(100, Math.max(10, Number(confidencePercent)))}%` }}
+                                    />
+                                  </div>
+                                </>
+                              ) : (
+                                <span className="font-semibold text-slate-500">N/A</span>
+                              )}
                             </div>
                           </TableCell>
                           <TableCell>{getSeverityBadge(severity)}</TableCell>

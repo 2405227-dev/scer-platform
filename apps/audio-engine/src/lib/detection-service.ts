@@ -1,15 +1,17 @@
 import { prisma } from "./prisma";
-import { analyzeDistressSpeech, DistressSeverity } from "./context-analyzer";
+import { DistressSeverity } from "./context-analyzer";
+import { analyzeDistressIntent, AIAnalysisResult } from "./ai-analyzer";
 
 export type { DistressSeverity };
 
 export interface DistressDetectionInput {
-  keyword?: string;
+  keyword?: string; // used for simulator/fallback
   confidence?: number;
   location?: string;
   source?: string;
   severity?: DistressSeverity;
   transcript?: string;
+  requestId?: string;
 }
 
 export interface AudioDistressEmergencyEvent {
@@ -25,32 +27,37 @@ export interface AudioDistressEmergencyEvent {
     source: string;
     status: "DISPATCHED";
     transcript?: string;
+    language?: string;
+    emergencyType?: string;
   };
 }
 
 export interface DetectionResult {
   success: boolean;
-  detection: {
+  isEmergency?: boolean; // Added so UI knows if it was filtered
+  detection?: {
     id: string;
     keyword: string;
     confidence: number;
     createdAt: Date;
+    language: string | null;
+    emergencyType: string | null;
+    severity: string | null;
+    transcript: string | null;
   };
-  emergencyEvent: AudioDistressEmergencyEvent;
+  emergencyEvent?: AudioDistressEmergencyEvent;
   webhooksDispatched: number;
   webhooksFailed: number;
+  message?: string;
+  aiResult?: AIAnalysisResult | null;
 }
 
-/**
- * Computes severity based on keyword urgency and detection confidence.
- */
 export function computeSeverity(keyword: string, confidence: number): DistressSeverity {
   const upper = keyword.toUpperCase().trim();
   if (upper.includes("SHOOTER") || upper.includes("FIRE")) {
     return "CRITICAL";
   }
   if (upper.includes(",") || upper.includes("+")) {
-    // Multi-keyword combination
     return "CRITICAL";
   }
   if (confidence >= 0.90) {
@@ -65,9 +72,6 @@ export function computeSeverity(keyword: string, confidence: number): DistressSe
   return "LOW";
 }
 
-/**
- * Dispatches emergency event payload to registered webhooks.
- */
 export async function dispatchEmergencyWebhooks(
   emergencyPayload: AudioDistressEmergencyEvent
 ): Promise<{ dispatched: number; failed: number }> {
@@ -96,16 +100,11 @@ export async function dispatchEmergencyWebhooks(
         if (response.ok) {
           dispatched++;
         } else {
-          console.warn(
-            `[AudioEngine] Webhook ${webhook.url} responded with status: ${response.status}`
-          );
+          console.warn(`[AudioEngine] Webhook ${webhook.url} responded with status: ${response.status}`);
           failed++;
         }
       } catch (err) {
-        console.warn(
-          `[AudioEngine] Failed to dispatch webhook to ${webhook.url}:`,
-          err instanceof Error ? err.message : err
-        );
+        console.warn(`[AudioEngine] Failed to dispatch webhook to ${webhook.url}:`, err instanceof Error ? err.message : err);
         failed++;
       }
     })
@@ -114,81 +113,83 @@ export async function dispatchEmergencyWebhooks(
   return { dispatched, failed };
 }
 
-/**
- * Core engine detection processor.
- * Processes detections originating from real browser microphone or simulator triggers.
- */
 export async function processDistressDetection(
   input: DistressDetectionInput = {}
 ): Promise<DetectionResult> {
-  // 1. Check audio configuration state
   const config = await prisma.audioConfiguration.findFirst();
   if (config && !config.isActive) {
     throw new Error("Audio Engine is currently DISABLED. Detections are suspended.");
   }
 
-  // 2. Fetch and validate against registered keywords
   const registeredKeywords = await prisma.audioKeyword.findMany();
   const keywordList = registeredKeywords.map((k) => k.keyword.toUpperCase().trim());
 
-  let targetKeyword = (input.keyword || "HELP").trim().toUpperCase();
-
-  // If compound keyword (e.g. "HELP, FIRE" or "HELP FIRE"), validate tokens
-  if (registeredKeywords.length > 0) {
-    const tokens = targetKeyword
-      .split(/[,+\s]+/)
-      .map((t) => t.trim().toUpperCase())
-      .filter(Boolean);
-
-    const validTokens = tokens.filter((t) => keywordList.includes(t));
-
-    if (validTokens.length > 0) {
-      targetKeyword = Array.from(new Set(validTokens)).join(", ");
-    } else {
-      // Check partial match
-      const match = keywordList.find(
-        (k) => k === targetKeyword || targetKeyword.includes(k) || k.includes(targetKeyword)
-      );
-      if (match) {
-        targetKeyword = match;
-      } else {
-        throw new Error(
-          `Keyword "${input.keyword}" is not in the active distress keyword registry (${keywordList.join(", ")})`
-        );
+  let targetKeyword = input.keyword ? input.keyword.trim().toUpperCase() : "SIMULATOR_TEST";
+  let confidence = input.confidence || 0;
+  const transcript = input.transcript?.trim() || undefined;
+  
+  let aiResult: AIAnalysisResult | null = null;
+  let isEmergency = true;
+  let finalSeverity: DistressSeverity = input.severity || computeSeverity(targetKeyword, confidence);
+  let finalLanguage = "unknown";
+  let finalEmergencyType = "DISTRESS";
+  
+  // If we have a transcript (from live microphone), use the AI analyzer
+  if (transcript && input.source === "AUDIO_ENGINE_MIC") {
+    aiResult = await analyzeDistressIntent(transcript, keywordList, input.requestId);
+    if (aiResult) {
+      isEmergency = aiResult.isEmergency;
+      if (!isEmergency) {
+        // Log benign detection but don't dispatch
+        return {
+          success: true,
+          isEmergency: false,
+          webhooksDispatched: 0,
+          webhooksFailed: 0,
+          message: aiResult.detectedIntent,
+          aiResult
+        };
       }
+      targetKeyword = aiResult.detectedIntent ?? aiResult.emergencyType ?? "UNKNOWN"; // Store the intent summary instead of rigid keyword
+      finalSeverity = aiResult.severity as DistressSeverity;
+      finalLanguage = aiResult.language ?? "unknown";
+      finalEmergencyType = aiResult.emergencyType ?? "DISTRESS";
+      if (aiResult.confidence !== null) {
+        confidence = aiResult.confidence;
+      }
+    } else {
+      // If AI fails for microphone input, do not default to HELP
+      throw new Error("Analyzer unavailable or failed to return valid semantic result.");
     }
   }
 
-  // 3. Validate or use confidence
-  let confidence = input.confidence;
-  if (confidence === undefined || confidence === null) {
-    // Generate realistic detection confidence between 0.93 and 0.98 for simulations without speech model input
-    confidence = Math.round((0.93 + Math.random() * 0.05) * 100) / 100;
-  } else {
-    if (typeof confidence !== "number" || isNaN(confidence) || confidence < 0 || confidence > 1) {
-      throw new Error("Confidence must be a valid float number between 0.0 and 1.0.");
-    }
-    // Round to 4 decimal places for clean storage
-    confidence = Math.round(confidence * 10000) / 10000;
+  // Validate confidence range
+  if (typeof confidence !== "number" || isNaN(confidence) || confidence < 0 || confidence > 1) {
+    throw new Error("Confidence must be a valid float number between 0.0 and 1.0.");
   }
+  confidence = Math.round(confidence * 10000) / 10000;
 
-  // 4. Compute or use passed severity
-  const severity = input.severity || computeSeverity(targetKeyword, confidence);
-
-  // 5. Determine location and hardware source
   const location = (input.location || "North Gate - Audio Sensor 01").trim();
   const source = (input.source || "AUDIO_ENGINE").trim();
-  const transcript = input.transcript?.trim() || undefined;
 
-  // 6. Save detection record to SQLite via Prisma
-  const detectionEvent = await prisma.audioDetectionEvent.create({
-    data: {
-      keyword: targetKeyword,
-      confidence: confidence,
-    },
+  // Save to DB (using the new fields as loosely typed via any to bypass Prisma EPERM generation issue during dev)
+  const createData: any = {
+    keyword: targetKeyword,
+    confidence: confidence,
+    language: finalLanguage,
+    emergencyType: finalEmergencyType,
+    severity: finalSeverity,
+    transcript: transcript,
+  };
+  
+  console.log(`[Detection][${new Date().toISOString()}] database creation started`);
+  console.log("[Detection] saving:", JSON.stringify(createData));
+  const detectionEvent = await (prisma.audioDetectionEvent.create as any)({
+    data: createData,
   });
+  console.log(`[Detection][${new Date().toISOString()}] database creation completed`);
+  console.log("[Detection] saved successfully: ID", detectionEvent.id);
 
-  // 7. Structure emergency event for SCER
   const emergencyEvent: AudioDistressEmergencyEvent = {
     event: "audio.distress.detected",
     eventType: "AUDIO_DISTRESS",
@@ -196,23 +197,26 @@ export async function processDistressDetection(
       id: detectionEvent.id,
       keyword: detectionEvent.keyword,
       confidence: detectionEvent.confidence,
-      severity: severity,
+      severity: finalSeverity,
       timestamp: detectionEvent.createdAt.toISOString(),
       location: location,
       source: source,
       status: "DISPATCHED",
       transcript: transcript,
+      language: finalLanguage,
+      emergencyType: finalEmergencyType,
     },
   };
 
-  // 8. Broadcast to webhooks
   const { dispatched, failed } = await dispatchEmergencyWebhooks(emergencyEvent);
 
   return {
     success: true,
+    isEmergency: true,
     detection: detectionEvent,
     emergencyEvent,
     webhooksDispatched: dispatched,
     webhooksFailed: failed,
+    aiResult,
   };
 }

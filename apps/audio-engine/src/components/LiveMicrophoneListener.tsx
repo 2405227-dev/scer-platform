@@ -35,10 +35,12 @@ interface LiveMicrophoneListenerProps {
 interface LastDispatchedInfo {
   keyword: string;
   confidence: number;
-  severity: DistressSeverity;
+  severity: string;
   transcript: string;
   timestamp: Date;
   summary: string;
+  language: string;
+  emergencyType: string;
 }
 
 export function LiveMicrophoneListener({ keywords }: LiveMicrophoneListenerProps) {
@@ -48,17 +50,26 @@ export function LiveMicrophoneListener({ keywords }: LiveMicrophoneListenerProps
   const [permissionState, setPermissionState] = useState<"prompt" | "granted" | "denied" | "unsupported">("prompt");
   const [liveTranscript, setLiveTranscript] = useState<string>("");
   const [filteredBenign, setFilteredBenign] = useState<string | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [lastDispatched, setLastDispatched] = useState<LastDispatchedInfo | null>(null);
   const [audioLevel, setAudioLevel] = useState<number>(0);
   const [statusMessage, setStatusMessage] = useState<string>("Microphone standby. Click to activate live monitoring.");
 
   const recognitionRef = useRef<any>(null);
-  const isListeningRef = useRef<boolean>(false);
+  const desiredListeningRef = useRef<boolean>(false);
+  const recognitionActiveRef = useRef<boolean>(false);
+  const transcriptBufferRef = useRef<string>("");
+  const highestConfidenceRef = useRef<number>(0);
+  const detectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const queueRef = useRef<{id: string, transcript: string, confidence: number, startTime: number}[]>([]);
+  const isProcessingQueueRef = useRef<boolean>(false);
+  const reqIdCounterRef = useRef<number>(1);
   const lastDetectionTimeRef = useRef<number>(0);
   const lastKeywordRef = useRef<string>("");
   const audioContextRef = useRef<AudioContext | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const animFrameRef = useRef<number | null>(null);
+  const recentTranscriptsRef = useRef<Map<string, number>>(new Map());
 
   const configuredKeywords = keywords.length > 0
     ? keywords.map((k) => k.keyword)
@@ -66,8 +77,8 @@ export function LiveMicrophoneListener({ keywords }: LiveMicrophoneListenerProps
 
   // Update ref when state changes
   useEffect(() => {
-    isListeningRef.current = isListening;
-  }, [isListening]);
+    // We don't bind isListening to the ref anymore, we use desiredListeningRef
+  }, []);
 
   // Check browser speech recognition support
   useEffect(() => {
@@ -80,64 +91,112 @@ export function LiveMicrophoneListener({ keywords }: LiveMicrophoneListenerProps
     }
   }, []);
 
-  // Handle emergency dispatch to backend
-  const handleEmergencyDetected = useCallback(
-    async (
-      keyword: string,
-      confidence: number,
-      severity: DistressSeverity,
-      transcript: string,
-      summary: string
-    ) => {
+  // Process the queue asynchronously
+  const processQueue = useCallback(async () => {
+    if (isProcessingQueueRef.current || queueRef.current.length === 0) return;
+    isProcessingQueueRef.current = true;
+    
+    while (queueRef.current.length > 0) {
+      const item = queueRef.current.shift();
+      if (!item) continue;
+      
+      const { id, transcript, confidence, startTime } = item;
+      
+      // Transcript Deduplication (10s cache)
       const now = Date.now();
-      const timeSinceLast = now - lastDetectionTimeRef.current;
-      const sameKeyword = lastKeywordRef.current === keyword;
-
-      // 8-second cooldown/debounce for identical keywords to prevent duplicate flooding
-      if (sameKeyword && timeSinceLast < 8000) {
-        console.log(`[AudioEngine] Suppressed duplicate cry for "${keyword}" (cooldown: ${Math.round((8000 - timeSinceLast) / 1000)}s remaining).`);
-        return;
+      const normalized = transcript.toLowerCase().replace(/[^\w\s]/g, "").replace(/\s+/g, " ").trim();
+      const lastSeen = recentTranscriptsRef.current.get(normalized);
+      
+      if (lastSeen && now - lastSeen < 10000) {
+        console.log(`[Mic][${id}] Duplicate transcript detected, ignoring.`);
+        continue;
       }
+      recentTranscriptsRef.current.set(normalized, now);
 
-      lastDetectionTimeRef.current = now;
-      lastKeywordRef.current = keyword;
-
+      console.log(`[Queue][${id}] processing started`);
+      console.log(`[API][${id}] request received`);
+      console.log(`[AI][${id}] request started`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      
       try {
+        const apiStart = performance.now();
         const res = await fetch("/api/detections", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            keyword,
-            confidence,
-            severity,
             transcript,
+            confidence, // browser recognition confidence
             location: "North Gate - Sector A (Live Microphone)",
             source: "AUDIO_ENGINE_MIC",
+            requestId: id
           }),
+          signal: controller.signal
         });
 
+        const apiEnd = performance.now();
         const data = await res.json();
+        const uiStart = performance.now();
 
         if (res.ok && data.success) {
-          setLastDispatched({
-            keyword,
-            confidence,
-            severity,
-            transcript,
-            timestamp: new Date(),
-            summary,
-          });
-          setFilteredBenign(null);
-          router.refresh();
+          console.log(`[AI][${id}] Analysis result:`, data);
+          if (data.isEmergency && data.aiResult) {
+            // Immediately update UI local state
+            setLastDispatched({
+              keyword: data.aiResult.detectedIntent,
+              confidence: data.aiResult.confidence ?? confidence,
+              severity: data.aiResult.severity,
+              transcript: transcript,
+              timestamp: new Date(),
+              summary: `AI classified as ${data.aiResult.emergencyType} (${data.aiResult.language})`,
+              language: data.aiResult.language,
+              emergencyType: data.aiResult.emergencyType,
+            });
+            setFilteredBenign(null);
+            
+            console.log(`[Detection][${id}] database completed`);
+            console.log(`[UI][${id}] detection rendered`);
+            router.refresh(); // Background sync for detection history list
+          } else if (data.isEmergency === false && data.aiResult) {
+            setFilteredBenign(
+              `Filtered benign conversation: "${transcript}" (${data.aiResult.detectedIntent})`
+            );
+            console.log(`[Detection][${id}] database completed (benign)`);
+            console.log(`[UI][${id}] detection rendered (benign)`);
+          }
+          setAiError(null);
         } else {
-          console.error("Failed to post detection:", data.error);
+          console.error(`[AI][${id}] Analyzer error: ${data.error}`);
+          setAiError(data.error || "AI Analyzer unavailable.");
         }
-      } catch (err) {
-        console.error("Network error dispatching live detection:", err);
+        
+        const uiEnd = performance.now();
+        const totalMs = uiEnd - startTime;
+        const apiMs = apiEnd - apiStart;
+        const flushMs = apiStart - startTime;
+        const uiMs = uiEnd - uiStart;
+        
+        console.log(`[Performance][${id}]`);
+        console.log(`speech flush: ${flushMs.toFixed(0)} ms`);
+        console.log(`API/AI: ${apiMs.toFixed(0)} ms`);
+        console.log(`UI update: ${uiMs.toFixed(0)} ms`);
+        console.log(`total: ${totalMs.toFixed(0)} ms`);
+
+      } catch (err: any) {
+        if (err.name === 'AbortError') {
+          console.error(`[AI][${id}] Request timed out (8s limit).`);
+          setAiError("AI Request timed out (8s limit).");
+        } else {
+          console.error(`[AI][${id}] Network error:`, err);
+          setAiError("Network error connecting to AI backend.");
+        }
+      } finally {
+        clearTimeout(timeoutId);
       }
-    },
-    [router]
-  );
+    }
+    
+    isProcessingQueueRef.current = false;
+  }, [router]);
 
   // Initialize Speech Recognition
   const startListening = useCallback(async () => {
@@ -150,6 +209,8 @@ export function LiveMicrophoneListener({ keywords }: LiveMicrophoneListenerProps
       setPermissionState("unsupported");
       return;
     }
+
+    console.log("[Mic] Starting recognition");
 
     try {
       // 1. Request microphone access for audio visualizer & permission
@@ -169,7 +230,7 @@ export function LiveMicrophoneListener({ keywords }: LiveMicrophoneListenerProps
 
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
         const updateLevel = () => {
-          if (!isListeningRef.current) return;
+          if (!desiredListeningRef.current) return;
           analyser.getByteFrequencyData(dataArray);
           let sum = 0;
           for (let i = 0; i < dataArray.length; i++) {
@@ -188,49 +249,99 @@ export function LiveMicrophoneListener({ keywords }: LiveMicrophoneListenerProps
       const recognition = new SpeechRecognitionClass();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = "en-US";
+      // Set language to navigator.language or fallback to en-US for multilingual support
+      recognition.lang = navigator.language || "en-US";
       recognition.maxAlternatives = 1;
 
       recognition.onstart = () => {
+        console.log("[Mic] Recognition started");
+        recognitionActiveRef.current = true;
         setIsListening(true);
         setStatusMessage("Listening continuously for emergency keywords...");
+
+        // Inject debug hook for runtime verification
+        (window as any).simulateSpeech = (text: string) => {
+          if (recognition.onresult) {
+            console.log(`[Mic] (simulate) final segment received: ${text}`);
+            recognition.onresult({
+              resultIndex: 0,
+              results: {
+                length: 1,
+                0: {
+                  isFinal: true,
+                  0: { transcript: text, confidence: 0.99 }
+                }
+              }
+            });
+          }
+        };
+      };
+
+      const flushTranscript = () => {
+        const cleanTranscript = transcriptBufferRef.current.trim();
+        const finalConfidence = highestConfidenceRef.current;
+        
+        if (!cleanTranscript) return;
+        
+        // Clear buffer immediately for next phrase
+        transcriptBufferRef.current = "";
+        highestConfidenceRef.current = 0;
+        
+        const timestampIso = new Date().toISOString();
+        const reqId = `MIC-${String(reqIdCounterRef.current++).padStart(3, "0")}`;
+        
+        console.log(`[Mic][${timestampIso}] complete transcript ready`);
+        console.log(`[Mic][${reqId}] accumulated transcript:`, cleanTranscript);
+        console.log(`[Mic][${reqId}] complete statement flushed:`, cleanTranscript);
+        console.log(`[Queue][${reqId}] queued`);
+        
+        // Push to async queue without blocking recognition
+        queueRef.current.push({
+          id: reqId,
+          transcript: cleanTranscript,
+          confidence: finalConfidence,
+          startTime: performance.now()
+        });
+        
+        processQueue();
       };
 
       recognition.onresult = (event: any) => {
-        let interimText = "";
-        let finalConfidence = 0.94; // fallback standard acoustic confidence
+        let currentInterim = "";
+        let newFinalText = "";
 
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           const result = event.results[i];
           const transcriptPiece = result[0].transcript;
-          interimText += transcriptPiece;
 
-          // Real recognition confidence from speech model (float 0.0 - 1.0)
-          if (result[0].confidence && result[0].confidence > 0) {
-            finalConfidence = result[0].confidence;
+          if (result.isFinal) {
+            newFinalText += transcriptPiece + " ";
+            if (result[0].confidence && result[0].confidence > 0) {
+              highestConfidenceRef.current = Math.max(highestConfidenceRef.current, result[0].confidence);
+            }
+          } else {
+            currentInterim += transcriptPiece;
           }
         }
 
-        const cleanTranscript = interimText.trim();
-        if (!cleanTranscript) return;
+        if (newFinalText.trim()) {
+          console.log(`[Mic] final segment received:`, newFinalText.trim());
+          transcriptBufferRef.current += newFinalText;
+          console.log(`[Mic] accumulated transcript:`, transcriptBufferRef.current.trim());
 
-        setLiveTranscript(cleanTranscript);
+          if (detectionTimeoutRef.current) {
+            clearTimeout(detectionTimeoutRef.current);
+          }
+          
+          console.log(`[Mic] debounce started`);
+          detectionTimeoutRef.current = setTimeout(() => {
+            flushTranscript();
+          }, 1200); // Wait for ~1.2s silence
+        }
 
-        // Run Natural Language Distress Context Analysis
-        const analysis = analyzeDistressSpeech(cleanTranscript, configuredKeywords);
-
-        if (analysis.isBenign) {
-          setFilteredBenign(
-            `Filtered benign conversation: "${cleanTranscript}" (${analysis.benignReason || "non-emergency context"})`
-          );
-        } else if (analysis.isEmergency) {
-          handleEmergencyDetected(
-            analysis.primaryKeyword,
-            finalConfidence,
-            analysis.severity,
-            cleanTranscript,
-            analysis.contextSummary
-          );
+        const displayTranscript = (transcriptBufferRef.current + currentInterim).trim();
+        if (displayTranscript) {
+          setLiveTranscript(displayTranscript);
         }
       };
 
@@ -241,6 +352,7 @@ export function LiveMicrophoneListener({ keywords }: LiveMicrophoneListenerProps
         }
         if (event.error === "not-allowed" || event.error === "service-not-allowed") {
           setPermissionState("denied");
+          desiredListeningRef.current = false;
           setIsListening(false);
           setStatusMessage("Microphone permission denied. Please allow microphone access.");
         } else {
@@ -248,21 +360,38 @@ export function LiveMicrophoneListener({ keywords }: LiveMicrophoneListenerProps
         }
       };
 
+      let isRestarting = false;
       recognition.onend = () => {
-        // Automatically restart speech recognition if operator kept listening active
-        if (isListeningRef.current) {
-          try {
-            recognition.start();
-          } catch (e) {
-            // Already active or restarting
+        console.log("[Mic] Recognition ended");
+        recognitionActiveRef.current = false;
+        
+        // Automatically restart speech recognition safely if we want to keep listening
+        if (desiredListeningRef.current && !isRestarting) {
+          isRestarting = true;
+          setTimeout(() => {
+            if (desiredListeningRef.current) {
+              try {
+                console.log("[Mic] recognition ended, restarting");
+                recognition.start();
+              } catch (e) {
+                // Ignore InvalidStateError
+              }
+            }
+            isRestarting = false;
+          }, 250);
+        } else if (!desiredListeningRef.current) {
+          // If we intentionally stopped, flush any remaining transcript
+          if (detectionTimeoutRef.current) {
+            clearTimeout(detectionTimeoutRef.current);
           }
-        } else {
+          flushTranscript();
           setIsListening(false);
           setStatusMessage("Microphone monitoring paused.");
         }
       };
 
       recognitionRef.current = recognition;
+      desiredListeningRef.current = true;
       recognition.start();
       setIsListening(true);
     } catch (err: any) {
@@ -275,12 +404,37 @@ export function LiveMicrophoneListener({ keywords }: LiveMicrophoneListenerProps
       }
       setIsListening(false);
     }
-  }, [configuredKeywords, handleEmergencyDetected]);
+  }, [configuredKeywords, processQueue]);
 
   // Stop listening
   const stopListening = useCallback(() => {
     setIsListening(false);
-    isListeningRef.current = false;
+    desiredListeningRef.current = false;
+
+    if (detectionTimeoutRef.current) {
+      clearTimeout(detectionTimeoutRef.current);
+    }
+    
+    // Attempt final flush manually if there's anything left
+    if (transcriptBufferRef.current.trim()) {
+      const cleanTranscript = transcriptBufferRef.current.trim();
+      const finalConfidence = highestConfidenceRef.current;
+      transcriptBufferRef.current = "";
+      highestConfidenceRef.current = 0;
+      const timestampIso = new Date().toISOString();
+      const reqId = `MIC-${String(reqIdCounterRef.current++).padStart(3, "0")}`;
+      
+      console.log(`[Mic][${timestampIso}] complete transcript ready (manual flush)`);
+      console.log(`[Mic][${reqId}] sending to queue:`, cleanTranscript);
+      
+      queueRef.current.push({
+        id: reqId,
+        transcript: cleanTranscript,
+        confidence: finalConfidence,
+        startTime: performance.now()
+      });
+      processQueue();
+    }
 
     if (recognitionRef.current) {
       try {
@@ -436,24 +590,22 @@ export function LiveMicrophoneListener({ keywords }: LiveMicrophoneListenerProps
               </Badge>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-1 border-t border-red-200/60">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs pt-1 border-t border-red-200/60">
               <div>
-                <span className="text-red-600 font-semibold block">Spoken Keyword(s)</span>
-                <span className="font-bold text-red-950 text-sm">{lastDispatched.keyword}</span>
+                <span className="text-red-600 font-semibold block">Detected Intent</span>
+                <span className="font-bold text-red-950 text-sm truncate block" title={lastDispatched.keyword}>{lastDispatched.keyword}</span>
               </div>
               <div>
-                <span className="text-red-600 font-semibold block">Recognition Confidence</span>
+                <span className="text-red-600 font-semibold block">Type & Lang</span>
+                <span className="font-bold text-red-950 text-sm">{lastDispatched.emergencyType} ({lastDispatched.language})</span>
+              </div>
+              <div>
+                <span className="text-red-600 font-semibold block">Confidence</span>
                 <span className="font-bold text-red-950 text-sm">
-                  {(lastDispatched.confidence * 100).toFixed(1)}%
+                  {lastDispatched.confidence > 0 ? `${(lastDispatched.confidence * 100).toFixed(1)}%` : "N/A"}
                 </span>
               </div>
-              <div>
-                <span className="text-red-600 font-semibold block">Context Assessment</span>
-                <span className="text-red-900 truncate block" title={lastDispatched.summary}>
-                  {lastDispatched.summary}
-                </span>
-              </div>
-              <div>
+              <div className="col-span-2">
                 <span className="text-red-600 font-semibold block">SCER Dispatch</span>
                 <span className="text-emerald-700 font-bold block">Dispatched via Webhook</span>
               </div>
@@ -470,6 +622,14 @@ export function LiveMicrophoneListener({ keywords }: LiveMicrophoneListenerProps
           <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-lg flex items-center gap-2.5 text-xs text-amber-800 animate-in fade-in">
             <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
             <span>{filteredBenign}</span>
+          </div>
+        )}
+
+        {/* AI Analyzer Error Banner */}
+        {aiError && isListening && (
+          <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg flex items-center gap-2.5 text-xs text-orange-800 animate-in fade-in">
+            <AlertTriangle className="w-4 h-4 text-orange-600 shrink-0" />
+            <span><strong>AI Engine Notice:</strong> {aiError} (Microphone remains active)</span>
           </div>
         )}
       </CardContent>

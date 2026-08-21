@@ -15,12 +15,17 @@ model AudioKeyword {
   keyword String
 }
 model AudioDetectionEvent {
-  id         String   @id @default(cuid())
-  keyword    String
-  confidence Float
-  createdAt  DateTime @default(now())
+  id            String   @id @default(cuid())
+  keyword       String
+  confidence    Float
+  language      String?
+  emergencyType String?
+  severity      String?
+  transcript    String?
+  createdAt     DateTime @default(now())
 }
 model AudioWebhook {
   id  String @id @default(cuid())
   url String
 }
+

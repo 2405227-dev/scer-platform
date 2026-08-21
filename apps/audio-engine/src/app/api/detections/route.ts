@@ -18,6 +18,16 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+    const requestId = typeof body.requestId === "string" ? body.requestId : undefined;
+    const reqTimestamp = new Date().toISOString();
+    
+    if (requestId) {
+      console.log(`[API][${reqTimestamp}] request received`);
+      console.log(`[API][${requestId}] transcript received: ${body.transcript}`);
+    } else {
+      console.log(`[API][${reqTimestamp}] request received without ID`);
+      console.log("[API] transcript received:", body.transcript);
+    }
 
     const keyword = typeof body.keyword === "string" ? body.keyword : undefined;
     const confidence = typeof body.confidence === "number" ? body.confidence : undefined;
@@ -37,11 +47,22 @@ export async function POST(req: NextRequest) {
       source,
       transcript,
       severity,
+      requestId,
     });
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Internal server error occurred.";
+    const rawMessage = error instanceof Error ? error.message : "Internal server error occurred.";
+    let requestId = undefined;
+    let message = rawMessage;
+
+    // Extract requestId if it exists in the format [REQ-001] message
+    const reqMatch = rawMessage.match(/^\[(REQ-\d+)\]\s*(.*)/);
+    if (reqMatch) {
+      requestId = reqMatch[1];
+      message = reqMatch[2];
+    }
+
     const status = message.includes("DISABLED")
       ? 403
       : message.includes("is not in the active distress keyword") || message.includes("Confidence must be")
@@ -52,6 +73,7 @@ export async function POST(req: NextRequest) {
       {
         success: false,
         error: message,
+        requestId: requestId,
       },
       { status }
     );
@@ -68,9 +90,12 @@ export async function GET(req: NextRequest) {
       take: limit,
     });
 
-    const enrichedDetections = detections.map((det) => ({
+    const enrichedDetections = detections.map((det: any) => ({
       ...det,
-      severity: computeSeverity(det.keyword, det.confidence),
+      severity: det.severity || computeSeverity(det.keyword, det.confidence),
+      language: det.language || null,
+      emergencyType: det.emergencyType || null,
+      transcript: det.transcript || null,
       status: "DISPATCHED",
       source: "AUDIO_ENGINE",
     }));
