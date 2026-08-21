@@ -128,3 +128,94 @@
     @apply font-sans;
   }
 }
+
+
+/* =========================================================
+   SCER PREMIUM COMMAND INTERFACE
+   ========================================================= */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #050a12;
+}
+
+::selection {
+  background: rgba(248, 113, 113, 0.22);
+  color: white;
+}
+
+/* Smooth scrollbar */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* Premium transitions */
+
+a,
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Live status animation */
+
+@keyframes scer-live {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+}
+
+.scer-live {
+  animation: scer-live 2s ease-in-out infinite;
+}
+
+/* Map overlays */
+
+.leaflet-container {
+  font-family: var(--font-geist-sans), sans-serif;
+}
+
+.leaflet-control-zoom,
+.leaflet-control-attribution {
+  opacity: 0.7;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: #08101b;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.leaflet-popup-content {
+  margin: 12px;
+}
