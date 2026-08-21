@@ -1,0 +1,29 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+model GeoResource {
+  id          String       @id @default(cuid())
+  name        String
+  capabilities Capability[]
+}
+model Capability {
+  id            String      @id @default(cuid())
+  name          String
+  geoResource   GeoResource @relation(fields: [geoResourceId], references: [id])
+  geoResourceId String
+}
+model GeoRecommendation {
+  id        String   @id @default(cuid())
+  score     Float
+  createdAt DateTime @default(now())
+}
+model GeoZone {
+  id   String @id @default(cuid())
+  name String
+  type String
+}

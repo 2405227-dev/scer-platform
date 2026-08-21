@@ -1,0 +1,26 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+model AudioConfiguration {
+  id        String   @id @default(cuid())
+  isActive  Boolean  @default(true)
+}
+model AudioKeyword {
+  id      String @id @default(cuid())
+  keyword String
+}
+model AudioDetectionEvent {
+  id         String   @id @default(cuid())
+  keyword    String
+  confidence Float
+  createdAt  DateTime @default(now())
+}
+model AudioWebhook {
+  id  String @id @default(cuid())
+  url String
+}
