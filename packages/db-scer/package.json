@@ -12,5 +12,9 @@
     "push": "prisma db push"
   },
   "main": "index.ts",
-  "types": "index.ts"
+  "types": "index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./*": "./*"
+  }
 }

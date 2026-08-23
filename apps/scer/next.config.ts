@@ -2,6 +2,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  transpilePackages: ["@scer/db-scer", "@scer/ui"],
+  serverExternalPackages: ["@prisma/client", "prisma"],
   async headers() {
     return [
       {

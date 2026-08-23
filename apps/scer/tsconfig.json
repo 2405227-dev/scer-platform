@@ -19,7 +19,11 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@scer/db-scer": ["../../packages/db-scer/index.ts"],
+      "@scer/db-scer/*": ["../../packages/db-scer/*"],
+      "@scer/ui": ["../../packages/ui/index.ts"],
+      "@scer/ui/*": ["../../packages/ui/*"]
     }
   },
   "include": [
