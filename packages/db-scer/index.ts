@@ -25,7 +25,7 @@ if (!process.env.DATABASE_URL) {
   }
 }
 
-if (!process.env.PRISMA_QUERY_ENGINE_LIBRARY) {
+if (!process.env.PRISMA_QUERY_ENGINE_LIBRARY && process.platform === "win32") {
   try {
     const __dirname = path.dirname(fileURLToPath(import.meta.url));
     const enginePath = path.join(__dirname, "src", "generated", "client", "query_engine-windows.dll.node");
