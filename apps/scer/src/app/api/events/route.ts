@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { publish, Event } from "@scer/db-scer/src/events";
-import { db as prisma } from "@scer/db-scer";
+import { publish, Event, db as prisma } from "@scer/db-scer";
 
 export async function POST(req: Request) {
   try {

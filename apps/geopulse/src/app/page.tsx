@@ -1,4 +1,4 @@
-import { LiveEventInjector } from '@scer/db-scer/src/LiveEventInjector';
+import { LiveEventInjector } from '@scer/db-scer';
 import { GeoPulseClient } from "@/components/GeoPulseClient";
 import { geoEngine } from "@/lib/geoEngine";
 

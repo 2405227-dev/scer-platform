@@ -1,4 +1,4 @@
-import { LiveEventInjector } from '@scer/db-scer/src/LiveEventInjector';
+import { LiveEventInjector } from '@scer/db-scer';
 import { LiveVoiceDistressDetector } from "@/components/LiveVoiceDistressDetector";
 
 import { db } from "@scer/db-audio";

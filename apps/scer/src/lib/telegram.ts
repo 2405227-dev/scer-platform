@@ -1,5 +1,4 @@
-import { db as prisma } from "@scer/db-scer";
-import { publish } from "@scer/db-scer/src/events";
+import { db as prisma, publish } from "@scer/db-scer";
 import fs from "fs";
 import path from "path";
 

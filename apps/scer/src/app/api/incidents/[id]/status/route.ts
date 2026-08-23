@@ -1,7 +1,5 @@
-
 import { NextResponse } from "next/server";
-import { db as prisma } from "@scer/db-scer";
-import { publish } from "@scer/db-scer/src/events";
+import { db as prisma, publish } from "@scer/db-scer";
 import { handleCorsOptions, jsonWithCors } from "@/lib/cors";
 import { notifyIncidentStatusChange } from "@/lib/telegram";
 

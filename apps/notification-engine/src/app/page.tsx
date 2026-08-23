@@ -1,4 +1,4 @@
-import { LiveEventInjector } from '@scer/db-scer/src/LiveEventInjector';
+import { LiveEventInjector } from '@scer/db-scer';
 import { NotificationSimulator } from "@/components/NotificationSimulator";
 
 import { db } from "@scer/db-notification";

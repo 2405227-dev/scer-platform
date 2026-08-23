@@ -1,4 +1,4 @@
-import { subscribe, Event, EventType } from "@scer/db-scer/src/events";
+import { subscribe, Event, EventType } from "@scer/db-scer";
 
 export const dynamic = "force-dynamic";
 

@@ -1,7 +1,6 @@
 import { IncidentActions } from "@/components/IncidentActions";
-import { LiveEventInjector } from '@scer/db-scer/src/LiveEventInjector';
 import MapDynamic from "@/components/MapDynamic";
-import { db } from "@scer/db-scer";
+import { db, LiveEventInjector } from "@scer/db-scer";
 import { DemoControlPanel } from "@/components/DemoControlPanel";
 
 import {

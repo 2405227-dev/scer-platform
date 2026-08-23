@@ -37,3 +37,6 @@ if (!process.env.PRISMA_QUERY_ENGINE_LIBRARY) {
 
 export const db = new PrismaClient();
 export * from "./src/auth";
+export * from "./src/events";
+export * from "./src/simulator";
+export * from "./src/LiveEventInjector";
