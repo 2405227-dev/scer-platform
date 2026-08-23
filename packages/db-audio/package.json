@@ -1,0 +1,16 @@
+{
+  "name": "@scer/db-audio",
+  "version": "1.0.0",
+  "dependencies": {
+    "@prisma/client": "^6.19.3"
+  },
+  "devDependencies": {
+    "prisma": "^6.19.3"
+  },
+  "scripts": {
+    "generate": "prisma generate",
+    "push": "prisma db push"
+  },
+  "main": "index.ts",
+  "types": "index.ts"
+}

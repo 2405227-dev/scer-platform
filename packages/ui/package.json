@@ -1,0 +1,12 @@
+{
+  "name": "@scer/ui",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "dependencies": {
+    "react": "^18",
+    "react-dom": "^18",
+    "lucide-react": "latest",
+    "clsx": "latest",
+    "tailwind-merge": "latest"
+  }
+}
