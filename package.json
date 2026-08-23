@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "concurrently \"npm run dev --workspace=scer\" \"npm run dev --workspace=audio-engine\" \"npm run dev --workspace=geopulse\" \"npm run dev --workspace=notification-engine\" \"npm run dev --workspace=live-response\"",
     "build": "npm run build --workspaces --if-present",
+    "postinstall": "prisma generate --schema=packages/db-scer/prisma/schema.prisma || true",
     "start": "npm run start --workspaces --if-present"
   },
   "devDependencies": {
