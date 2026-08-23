@@ -7,39 +7,11 @@ let cachedToken: string | null = null;
 let cachedUsername: string | null = null;
 
 function loadEnvFallback() {
-  if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_BOT_USERNAME) return;
-  try {
-    const candidatePaths = [
-      path.resolve(process.cwd(), ".env.local"),
-      path.resolve(process.cwd(), "apps/scer/.env.local"),
-      path.resolve(process.cwd(), "../apps/scer/.env.local"),
-      path.resolve(__dirname, "../../.env.local"),
-      path.resolve(__dirname, "../../../apps/scer/.env.local"),
-    ];
-
-    for (const envPath of candidatePaths) {
-      if (fs.existsSync(envPath)) {
-        const content = fs.readFileSync(envPath, "utf-8");
-        for (const line of content.split("\n")) {
-          const match = line.match(/^\s*([\w_]+)\s*=\s*(.*)?\s*$/);
-          if (match) {
-            const key = match[1];
-            let val = (match[2] || "").trim();
-            if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
-              val = val.slice(1, -1);
-            }
-            if (!process.env[key] && val) {
-              process.env[key] = val;
-            }
-            if (key === "TELEGRAM_BOT_TOKEN" && val) cachedToken = val;
-            if (key === "TELEGRAM_BOT_USERNAME" && val) cachedUsername = val;
-          }
-        }
-        if (cachedToken) break;
-      }
-    }
-  } catch (err) {
-    // ignore
+  if (!process.env.TELEGRAM_BOT_TOKEN) {
+    process.env.TELEGRAM_BOT_TOKEN = "8307223388:AAGxUu2j0K8u6p69_D-y5i4t4XpD5M6Gv4Y";
+  }
+  if (!process.env.TELEGRAM_BOT_USERNAME) {
+    process.env.TELEGRAM_BOT_USERNAME = "SohamSCER_EmergencyBot";
   }
 }
 
