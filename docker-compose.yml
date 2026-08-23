@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  scer-platform:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scer_emergency_mesh
+    ports:
+      - "3000:3000"  # SCER Command Center & User Portal
+      - "3001:3001"  # Audio Intelligence Engine
+      - "3002:3002"  # GeoPulse 3D & Spatial Radar
+      - "3003:3003"  # Smart Notification & Dispatch Engine
+      - "3004:3004"  # Live Tactical Response HUD
+    environment:
+      - NODE_ENV=production
+      - NEXTAUTH_SECRET=scer-secret-key-2026-super-secure
+      - NEXTAUTH_URL=http://localhost:3000
+    restart: unless-stopped
