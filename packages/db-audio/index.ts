@@ -24,4 +24,14 @@ if (!process.env.DATABASE_URL) {
   }
 }
 
+if (!process.env.PRISMA_QUERY_ENGINE_LIBRARY) {
+  try {
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const enginePath = path.join(__dirname, "src", "generated", "client", "query_engine-windows.dll.node");
+    if (fs.existsSync(enginePath)) {
+      process.env.PRISMA_QUERY_ENGINE_LIBRARY = enginePath;
+    }
+  } catch (err) {}
+}
+
 export const db = new PrismaClient();

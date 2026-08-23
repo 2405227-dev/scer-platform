@@ -40,14 +40,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     // Define valid state machine transitions: pending -> accepted -> in_progress -> resolved
     const validTransitions: Record<string, string[]> = {
-      pending: ["accepted"],
-      reported: ["accepted"],
-      new: ["accepted"],
-      open: ["accepted"],
-      assigned: ["in_progress", "accepted"],
-      accepted: ["in_progress", "resolved"],
-      acknowledged: ["in_progress", "resolved"],
-      in_progress: ["resolved"],
+      pending: ["accepted", "assigned", "in_progress", "en_route", "resolved"],
+      reported: ["accepted", "assigned", "in_progress", "en_route", "resolved"],
+      new: ["accepted", "assigned", "in_progress", "en_route", "resolved"],
+      open: ["accepted", "assigned", "in_progress", "en_route", "resolved"],
+      assigned: ["in_progress", "accepted", "en_route", "arrived", "resolved"],
+      accepted: ["in_progress", "assigned", "en_route", "arrived", "resolved"],
+      acknowledged: ["in_progress", "assigned", "en_route", "arrived", "resolved"],
+      en_route: ["arrived", "in_progress", "resolved"],
+      arrived: ["in_progress", "resolved"],
+      in_progress: ["arrived", "resolved"],
       resolved: [], // Terminal state: cannot transition from resolved
       closed: [],
     };

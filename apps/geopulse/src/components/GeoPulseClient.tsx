@@ -18,6 +18,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import LiveGeoMap from "./LiveGeoMapDynamic";
+import { FloorPlan3D } from "./FloorPlan3D";
 import { GeoDevice, GeoZone, GeoAlert } from "@/lib/geoEngine";
 
 interface GeoPulseClientProps {
@@ -43,6 +44,7 @@ export function GeoPulseClient({ initialSnapshot }: GeoPulseClientProps) {
   const [stats, setStats] = useState(initialSnapshot.stats);
   const [selectedDevice, setSelectedDevice] = useState<GeoDevice | null>(null);
 
+  const [viewMode, setViewMode] = useState<"3D_INDOOR" | "OUTDOOR_MAP">("3D_INDOOR");
   const [isConnected, setIsConnected] = useState(false);
   const [demoRunning, setDemoRunning] = useState(false);
   const [demoStage, setDemoStage] = useState(0);
@@ -234,64 +236,106 @@ export function GeoPulseClient({ initialSnapshot }: GeoPulseClientProps) {
           </div>
         </section>
 
-        {/* MAIN CONTENT GRID: MAP & ALERT FEED */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* TACTICAL MAP */}
-          <div className="lg:col-span-2">
-            <LiveGeoMap
-              devices={devices}
-              zones={zones}
-              selectedDevice={selectedDevice}
-              onSelectDevice={setSelectedDevice}
-            />
+        {/* VIEW MODE SWITCHER: OUTDOOR GPS VS 3D BUILDING INDOOR MODEL */}
+        <section className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-white/[0.08] bg-[#070e1c]/90 p-2 sm:p-2.5 backdrop-blur-xl shadow-xl">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setViewMode("3D_INDOOR")}
+              className={`flex items-center gap-2 rounded-2xl px-4 sm:px-5 py-2.5 text-xs font-black uppercase tracking-wider transition cursor-pointer ${
+                viewMode === "3D_INDOOR"
+                  ? "bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white shadow-xl shadow-purple-600/30"
+                  : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
+              }`}
+            >
+              <Layers className="h-4 w-4 text-purple-300" />
+              <span>🏢 3D Building Model & Indoor Rooms</span>
+              <span className="rounded-full bg-purple-500/30 border border-purple-400/40 px-2 py-0.2 text-[8px] font-black text-purple-200">
+                ATLAS MODEL
+              </span>
+            </button>
+
+            <button
+              onClick={() => setViewMode("OUTDOOR_MAP")}
+              className={`flex items-center gap-2 rounded-2xl px-4 sm:px-5 py-2.5 text-xs font-black uppercase tracking-wider transition cursor-pointer ${
+                viewMode === "OUTDOOR_MAP"
+                  ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 text-white shadow-xl shadow-emerald-600/30"
+                  : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
+              }`}
+            >
+              <MapPin className="h-4 w-4 text-emerald-300" />
+              <span>🗺️ Outdoor GPS Vector Map</span>
+            </button>
           </div>
 
-          {/* REAL-TIME ALERTS & LOGS */}
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-white/[0.08] bg-[#08101b] p-5 shadow-2xl">
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ShieldAlert className="h-4 w-4 text-red-400" />
-                  <h3 className="text-xs font-black uppercase tracking-wider text-white">
-                    Live Geofence Violations
-                  </h3>
-                </div>
-                <span className="rounded-md bg-red-500/20 px-2 py-0.5 text-[9px] font-bold text-red-300 border border-red-500/30">
-                  {alerts.length} Events
-                </span>
-              </div>
+          <div className="text-[11px] font-mono text-slate-400 px-3 hidden md:block">
+            {viewMode === "3D_INDOOR"
+              ? "🎯 Room-level pinpointing for Police SWAT & Fire Rescue"
+              : "📡 Transponder geofence & velocity tracking"}
+          </div>
+        </section>
 
-              <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
-                {alerts.length === 0 ? (
-                  <div className="py-12 text-center text-xs text-slate-500">
-                    No active geofence violations. All devices within safe boundaries.
+        {/* MAIN DISPLAY: 3D INDOOR MODEL OR OUTDOOR VECTOR RADAR */}
+        {viewMode === "3D_INDOOR" ? (
+          <FloorPlan3D />
+        ) : (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {/* TACTICAL MAP */}
+            <div className="lg:col-span-2">
+              <LiveGeoMap
+                devices={devices}
+                zones={zones}
+                selectedDevice={selectedDevice}
+                onSelectDevice={setSelectedDevice}
+              />
+            </div>
+
+            {/* REAL-TIME ALERTS & LOGS */}
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-white/[0.08] bg-[#08101b] p-5 shadow-2xl">
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShieldAlert className="h-4 w-4 text-red-400" />
+                    <h3 className="text-xs font-black uppercase tracking-wider text-white">
+                      Live Geofence Violations
+                    </h3>
                   </div>
-                ) : (
-                  alerts.map((alert) => (
-                    <div
-                      key={alert.id}
-                      className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs transition hover:bg-red-500/15 animate-in fade-in"
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="rounded bg-red-500/30 px-1.5 py-0.2 text-[8px] font-black uppercase text-red-200">
-                          {alert.type}
-                        </span>
-                        <span suppressHydrationWarning className="text-[10px] text-slate-400 font-mono">
-                          {new Date(alert.timestamp).toLocaleTimeString()}
-                        </span>
-                      </div>
-                      <div className="font-bold text-white text-[11px]">{alert.message}</div>
-                      <div className="mt-1 flex items-center gap-1 text-[10px] text-slate-400">
-                        <MapPin className="h-3 w-3 text-slate-500" />
-                        <span>Zone: {alert.zoneName}</span>
-                      </div>
+                  <span className="rounded-md bg-red-500/20 px-2 py-0.5 text-[9px] font-bold text-red-300 border border-red-500/30">
+                    {alerts.length} Events
+                  </span>
+                </div>
+
+                <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
+                  {alerts.length === 0 ? (
+                    <div className="py-12 text-center text-xs text-slate-500">
+                      No active geofence violations. All devices within safe boundaries.
                     </div>
-                  ))
-                )}
+                  ) : (
+                    alerts.map((alert) => (
+                      <div
+                        key={alert.id}
+                        className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs transition hover:bg-red-500/15 animate-in fade-in"
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="rounded bg-red-500/30 px-1.5 py-0.2 text-[8px] font-black uppercase text-red-200">
+                            {alert.type}
+                          </span>
+                          <span suppressHydrationWarning className="text-[10px] text-slate-400 font-mono">
+                            {new Date(alert.timestamp).toLocaleTimeString()}
+                          </span>
+                        </div>
+                        <div className="font-bold text-white text-[11px]">{alert.message}</div>
+                        <div className="mt-1 flex items-center gap-1 text-[10px] text-slate-400">
+                          <MapPin className="h-3 w-3 text-slate-500" />
+                          <span>Zone: {alert.zoneName}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* DEVICE FLEET ROSTER TABLE */}
         <section className="mt-8 rounded-2xl border border-white/[0.08] bg-[#08101b] p-6 shadow-2xl">

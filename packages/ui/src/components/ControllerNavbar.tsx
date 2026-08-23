@@ -177,6 +177,7 @@ export function ControllerNavbar({
               <nav className="flex items-center gap-1 xl:gap-1.5 overflow-x-auto py-1 min-w-0">
                 {navItems.map((item) => {
                   const active = isItemActive(item);
+                  const isLiveResponse = item.id === "live-response";
                   return (
                     <a
                       key={item.id}
@@ -185,12 +186,20 @@ export function ControllerNavbar({
                         e.preventDefault();
                         window.location.href = item.href;
                       }}
-                      className={`relative inline-flex items-center justify-center whitespace-nowrap rounded-xl px-3 py-2 text-[11px] font-bold transition-colors leading-none ${
+                      className={`relative inline-flex items-center gap-1.5 justify-center whitespace-nowrap rounded-xl px-3 py-2 text-[11px] font-bold transition-colors leading-none ${
                         active
                           ? "bg-white/[0.09] text-white shadow-sm"
+                          : isLiveResponse
+                          ? "bg-red-500/10 text-red-300 border border-red-500/20 hover:bg-red-500/20"
                           : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
                       }`}
                     >
+                      {isLiveResponse && (
+                        <span className="relative flex h-2 w-2 shrink-0">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                          <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                        </span>
+                      )}
                       <span>{item.label}</span>
                       {active && (
                         <span className="absolute bottom-0 left-1/2 h-[2px] w-4 -translate-x-1/2 rounded-full bg-red-400 pointer-events-none" />

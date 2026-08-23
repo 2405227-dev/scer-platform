@@ -26,6 +26,7 @@ export function getControllerNavItems(
 ): ControllerNavItem[] {
   const baseItems: ControllerNavItem[] = [
     { id: "command", label: "Command", href: `${baseUrl}/command` },
+    { id: "live-response", label: "Live Response", href: `${baseUrl}/live-response` },
     { id: "incidents", label: "Incidents", href: `${baseUrl}/incidents` },
     { id: "responders", label: "Responders", href: `${baseUrl}/responders` },
     { id: "geopulse", label: "GeoPulse", href: geoUrl, isExternal: true },
@@ -35,9 +36,9 @@ export function getControllerNavItems(
 
   if (isRootController) {
     return [
-      ...baseItems.slice(0, 5), // Command, Incidents, Responders, GeoPulse, Analytics
+      ...baseItems.slice(0, 6), // Command, Live Response, Incidents, Responders, GeoPulse, Analytics
       { id: "accounts", label: "Accounts", href: `${baseUrl}/accounts` },
-      ...baseItems.slice(5), // Audit
+      ...baseItems.slice(6), // Audit
     ];
   }
 

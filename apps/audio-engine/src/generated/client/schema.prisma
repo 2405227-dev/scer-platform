@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model AudioConfiguration {
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
+  isActive Boolean @default(true)
+}
+
+model AudioKeyword {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  keyword String
+}
+
+model AudioDetectionEvent {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  keyword      String
+  confidence   Float
+  createdAt    DateTime @default(now())
+  location     String?
+  location_lat Float?
+  location_lon Float?
+  metadata     String   @default("{}")
+  severity     String   @default("MEDIUM")
+  sourceDevice String?
+}
+
+model AudioProcessingLog {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  eventId   String?
+  status    String
+  duration  Int
+  details   String?
+  createdAt DateTime @default(now())
+}
+
+model DetectionRule {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  keyword    String
+  severity   String
+  enabled    Boolean  @default(true)
+  confidence Float    @default(0.8)
+  action     String   @default("CREATE_INCIDENT")
+  createdAt  DateTime @default(now())
+}
+
+model AudioWebhook {
+  id  String @id @default(auto()) @map("_id") @db.ObjectId
+  url String
+}

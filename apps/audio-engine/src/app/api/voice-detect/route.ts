@@ -92,8 +92,8 @@ export async function POST(req: Request) {
       location: loc,
       webhookResult,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("voice-detect error:", error);
-    return NextResponse.json({ error: "Failed to process voice detection" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to process voice detection", details: error?.message || String(error) }, { status: 500 });
   }
 }

@@ -24,7 +24,7 @@ export default async function ControllerLayout({
           exactly once per navigation, not on session updates or re-renders */}
       <RouteScrollReset />
       {/* Page shell — every controller route inherits this exact baseline */}
-      <div className="min-h-[calc(100vh-78px)] bg-[#050a12] text-white">
+      <div className="min-h-screen bg-[#050a12] text-white pt-[88px]">
         {children}
       </div>
     </>

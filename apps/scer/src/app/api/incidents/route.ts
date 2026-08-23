@@ -71,6 +71,8 @@ export async function POST(req: Request) {
         assignedToName: data.assignedToName || null,
         telegramChatId: data.telegramChatId || data.reporterTelegramChatId || null,
         telegramMessageId: data.telegramMessageId || null,
+        location_lat: data.location_lat != null ? parseFloat(data.location_lat) : null,
+        location_lon: data.location_lon != null ? parseFloat(data.location_lon) : null,
         priority: data.severity === "CRITICAL" ? 3 : data.severity === "HIGH" ? 2 : 1,
       },
     });

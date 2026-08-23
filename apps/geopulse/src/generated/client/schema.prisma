@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model ResponderUnit {
+  id               String          @id @default(auto()) @map("_id") @db.ObjectId
+  name             String
+  capabilities     Capability[]
+  location_lat     Float
+  location_lon     Float
+  zone             String
+  status           String          @default("AVAILABLE")
+  type             String          @default("TEAM")
+  activeIncidentId String?
+  dispatchRoutes   DispatchRoute[]
+  geoZoneId        String?         @db.ObjectId
+  geoZone          GeoZone?        @relation(fields: [geoZoneId], references: [id])
+}
+
+model DispatchRoute {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  responderUnitId String        @db.ObjectId
+  responderUnit   ResponderUnit @relation(fields: [responderUnitId], references: [id], onDelete: Cascade)
+  destLat         Float
+  destLon         Float
+  distance        Float
+  eta             Int
+  status          String        @default("PENDING")
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Capability {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  responderUnit   ResponderUnit @relation(fields: [responderUnitId], references: [id])
+  responderUnitId String        @db.ObjectId
+}
+
+model GeoRecommendation {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  score     Float
+  createdAt DateTime @default(now())
+}
+
+model GeoZone {
+  id             String          @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  type           String
+  polygon        String
+  responderUnits ResponderUnit[]
+  coverage       Float
+}

@@ -42,59 +42,59 @@ export interface GeoAlert {
 export const GEOFENCE_ZONES: GeoZone[] = [
   {
     id: "zone-safe",
-    name: "Campus Quad & Academic Hub",
-    code: "ZONE-SAFE",
+    name: "KIIT Campus 6 Academic Quad & Convention Center",
+    code: "KIIT-C6-ACAD",
     type: "SAFE",
     color: "#10b981",
     coords: [
-      [40.7595, -73.9880],
-      [40.7595, -73.9840],
-      [40.7570, -73.9840],
-      [40.7570, -73.9880],
+      [20.3542, 85.8192],
+      [20.3542, 85.8212],
+      [20.3526, 85.8212],
+      [20.3526, 85.8192],
     ],
-    description: "Public pedestrian zone. Standard monitoring active.",
+    description: "KIIT Campus 6 School of Applied Sciences & Central Quad. Active student pedestrian zone.",
   },
   {
     id: "zone-event",
-    name: "Athletic Arena & Stadium",
-    code: "ZONE-EVENT",
+    name: "Campus 6 Sports Arena & Chintan Lawn",
+    code: "KIIT-C6-SPORTS",
     type: "EVENT",
     color: "#38bdf8",
     coords: [
-      [40.7600, -73.9840],
-      [40.7600, -73.9810],
-      [40.7565, -73.9810],
-      [40.7565, -73.9840],
+      [20.3545, 85.8212],
+      [20.3545, 85.8230],
+      [20.3522, 85.8230],
+      [20.3522, 85.8212],
     ],
-    description: "High-density gathering sector. Crowd flow analysis.",
+    description: "Auditorium, Open Athletics Field & Chintan Cultural Lawn. Crowd monitoring active.",
   },
   {
     id: "zone-restricted",
-    name: "High-Voltage Power Utility Vault",
-    code: "ZONE-RESTRICTED",
+    name: "Campus 6 High-Voltage Substation & Lab Vault",
+    code: "KIIT-C6-VAULT",
     type: "RESTRICTED",
     color: "#f59e0b",
     coords: [
-      [40.7610, -73.9910],
-      [40.7610, -73.9880],
-      [40.7590, -73.9880],
-      [40.7590, -73.9910],
+      [20.3552, 85.8180],
+      [20.3552, 85.8195],
+      [20.3538, 85.8195],
+      [20.3538, 85.8180],
     ],
-    description: "RESTRICTED: Hazardous electrical switchgear. Level 4 clearance required.",
+    description: "RESTRICTED: Campus 6 Electrical Switchgear & Heavy Physics Vault. Clearance required.",
   },
   {
     id: "zone-emergency",
-    name: "Biohazard & Chemical Storage Facility",
-    code: "ZONE-EMERGENCY",
+    name: "Campus 6 Chemical & Biohazard Storage Facility",
+    code: "KIIT-C6-HAZARD",
     type: "EMERGENCY",
     color: "#ef4444",
     coords: [
-      [40.7560, -73.9840],
-      [40.7560, -73.9810],
-      [40.7540, -73.9810],
-      [40.7540, -73.9840],
+      [20.3520, 85.8180],
+      [20.3520, 85.8195],
+      [20.3508, 85.8195],
+      [20.3508, 85.8180],
     ],
-    description: "EMERGENCY QUARANTINE: Highly toxic reagent storage. Unauthorized entry triggers armed alarm.",
+    description: "EMERGENCY QUARANTINE: Highly toxic chemical reagent repository. Armed sensors.",
   },
 ];
 
@@ -111,95 +111,95 @@ function isPointInPolygon(point: [number, number], vs: [number, number][]) {
   return inside;
 }
 
-// Initial Device Fleet with real geographic coordinates
+// Initial Device Fleet with KIIT Campus 6 geographic coordinates
 const INITIAL_DEVICES: GeoDevice[] = [
   {
     id: "DEV-101",
-    name: "Tactical Guard Alpha",
+    name: "KIIT Security Patrol Alpha",
     callsign: "PATROL-01",
     type: "SECURITY",
     icon: "🛡️",
-    lat: 40.7582,
-    lon: -73.9860,
+    lat: 20.3532,
+    lon: 85.8200,
     speed: 12,
     heading: 45,
     status: "MOVING",
     battery: 94,
-    currentZone: "Campus Quad & Academic Hub",
+    currentZone: "KIIT Campus 6 Academic Quad & Convention Center",
     zoneType: "SAFE",
-    trail: [{ lat: 40.7582, lon: -73.9860, time: new Date().toISOString() }],
+    trail: [{ lat: 20.3532, lon: 85.8200, time: new Date().toISOString() }],
     lastUpdate: new Date().toISOString(),
     alert: null,
   },
   {
     id: "DEV-204",
-    name: "Paramedic Mobile Unit 2",
+    name: "Campus 6 Paramedic Ambulance 2",
     callsign: "MEDIC-02",
     type: "PARAMEDIC",
     icon: "🚑",
-    lat: 40.7575,
-    lon: -73.9850,
+    lat: 20.3528,
+    lon: 85.8198,
     speed: 0,
     heading: 180,
     status: "STATIONARY",
     battery: 88,
-    currentZone: "Campus Quad & Academic Hub",
+    currentZone: "KIIT Campus 6 Academic Quad & Convention Center",
     zoneType: "SAFE",
-    trail: [{ lat: 40.7575, lon: -73.9850, time: new Date().toISOString() }],
+    trail: [{ lat: 20.3528, lon: 85.8198, time: new Date().toISOString() }],
     lastUpdate: new Date().toISOString(),
     alert: null,
   },
   {
     id: "DEV-305",
-    name: "Fire Marshal Lead",
+    name: "KIIT Fire Marshal Quick Unit",
     callsign: "FIRE-05",
     type: "FIRE_MARSHAL",
     icon: "🚒",
-    lat: 40.7585,
-    lon: -73.9825,
+    lat: 20.3538,
+    lon: 85.8218,
     speed: 16,
     heading: 90,
     status: "MOVING",
     battery: 76,
-    currentZone: "Athletic Arena & Stadium",
+    currentZone: "Campus 6 Sports Arena & Chintan Lawn",
     zoneType: "EVENT",
-    trail: [{ lat: 40.7585, lon: -73.9825, time: new Date().toISOString() }],
+    trail: [{ lat: 20.3538, lon: 85.8218, time: new Date().toISOString() }],
     lastUpdate: new Date().toISOString(),
     alert: null,
   },
   {
     id: "DEV-408",
-    name: "VIP Student Asset 12",
+    name: "VIP Student Asset (Campus 6)",
     callsign: "BADGE-12",
     type: "VIP_ASSET",
     icon: "👤",
-    lat: 40.7588,
-    lon: -73.9870,
+    lat: 20.3534,
+    lon: 85.8206,
     speed: 4,
     heading: 270,
     status: "MOVING",
     battery: 62,
-    currentZone: "Campus Quad & Academic Hub",
+    currentZone: "KIIT Campus 6 Academic Quad & Convention Center",
     zoneType: "SAFE",
-    trail: [{ lat: 40.7588, lon: -73.9870, time: new Date().toISOString() }],
+    trail: [{ lat: 20.3534, lon: 85.8206, time: new Date().toISOString() }],
     lastUpdate: new Date().toISOString(),
     alert: null,
   },
   {
     id: "DEV-512",
-    name: "Rapid Transport Cart 4",
+    name: "Campus 6 Transit Cart 4",
     callsign: "LOGISTICS-04",
     type: "LOGISTICS",
     icon: "🚚",
-    lat: 40.7550,
-    lon: -73.9890,
+    lat: 20.3518,
+    lon: 85.8185,
     speed: 0,
     heading: 0,
     status: "STATIONARY",
     battery: 98,
     currentZone: null,
     zoneType: "OPEN",
-    trail: [{ lat: 40.7550, lon: -73.9890, time: new Date().toISOString() }],
+    trail: [{ lat: 20.3518, lon: 85.8185, time: new Date().toISOString() }],
     lastUpdate: new Date().toISOString(),
     alert: null,
   },
@@ -333,14 +333,14 @@ class GeoEngine {
       let newLat = device.lat + Math.sin(angle) * step;
       let newLon = device.lon + Math.cos(angle) * step;
 
-      // Keep within campus bounds [40.7530, 40.7630] x [-73.9920, -73.9800]
-      if (newLat < 40.7530 || newLat > 40.7630) {
+      // Keep within KIIT Campus 6 bounds [20.3500, 20.3565] x [85.8165, 85.8240]
+      if (newLat < 20.3500 || newLat > 20.3565) {
         device.heading = (device.heading + 180) % 360;
-        newLat = Math.max(40.7530, Math.min(40.7630, newLat));
+        newLat = Math.max(20.3500, Math.min(20.3565, newLat));
       }
-      if (newLon < -73.9920 || newLon > -73.9800) {
+      if (newLon < 85.8165 || newLon > 85.8240) {
         device.heading = (device.heading + 180) % 360;
-        newLon = Math.max(-73.9920, Math.min(-73.9800, newLon));
+        newLon = Math.max(85.8165, Math.min(85.8240, newLon));
       }
 
       device.lat = +newLat.toFixed(6);
@@ -400,15 +400,15 @@ class GeoEngine {
 
     const dev = this.devices.get("DEV-101");
     if (dev) {
-      dev.lat = 40.7580;
-      dev.lon = -73.9860;
+      dev.lat = 20.3530;
+      dev.lon = 85.8200;
       dev.speed = 18;
       dev.heading = 290;
       dev.status = "MOVING";
-      dev.currentZone = "Campus Quad & Academic Hub";
+      dev.currentZone = "KIIT Campus 6 Academic Quad & Convention Center";
       dev.zoneType = "SAFE";
       dev.alert = null;
-      dev.trail = [{ lat: 40.7580, lon: -73.9860, time: new Date().toISOString() }];
+      dev.trail = [{ lat: 20.3530, lon: 85.8200, time: new Date().toISOString() }];
     }
 
     this.broadcast();
@@ -421,28 +421,28 @@ class GeoEngine {
     if (!dev) return;
 
     if (this.demoStep === 1) {
-      dev.lat = 40.7586;
-      dev.lon = -73.9870;
+      dev.lat = 20.3536;
+      dev.lon = 85.8194;
       dev.speed = 22;
       dev.heading = 295;
       dev.status = "MOVING";
-      dev.currentZone = "Campus Quad & Academic Hub";
+      dev.currentZone = "KIIT Campus 6 Academic Quad & Convention Center";
     } else if (this.demoStep === 2) {
-      dev.lat = 40.7592;
-      dev.lon = -73.9882;
+      dev.lat = 20.3542;
+      dev.lon = 85.8188;
       dev.speed = 26;
       dev.heading = 300;
       dev.status = "MOVING";
-      dev.currentZone = "Approaching Restricted Utility Vault";
+      dev.currentZone = "Approaching Campus 6 Substation Vault";
       dev.zoneType = "OPEN";
     } else if (this.demoStep === 3) {
-      // Enters Restricted Zone (Utility Vault)
-      dev.lat = 40.7600;
-      dev.lon = -73.9895;
+      // Enters Restricted Zone (Substation Vault)
+      dev.lat = 20.3546;
+      dev.lon = 85.8186;
       dev.speed = 34;
       dev.heading = 310;
       dev.status = "BREACH";
-      dev.currentZone = "High-Voltage Power Utility Vault";
+      dev.currentZone = "Campus 6 High-Voltage Substation & Lab Vault";
       dev.zoneType = "RESTRICTED";
       dev.alert = "CRITICAL: Level 4 Geofence Violation";
 
@@ -451,31 +451,31 @@ class GeoEngine {
         dev.name,
         "GEOFENCE_BREACH",
         "CRITICAL",
-        `🚨 LIVE BREACH: ${dev.name} (${dev.callsign}) penetrated High-Voltage Power Utility Vault!`,
-        "High-Voltage Power Utility Vault"
+        `🚨 LIVE BREACH: ${dev.name} (${dev.callsign}) entered Campus 6 Substation Vault!`,
+        "Campus 6 High-Voltage Substation & Lab Vault"
       );
     } else if (this.demoStep === 4) {
-      dev.lat = 40.7605;
-      dev.lon = -73.9902;
+      dev.lat = 20.3549;
+      dev.lon = 85.8184;
       dev.speed = 58; // High speed
       dev.heading = 315;
       dev.status = "SPEED_ANOMALY";
-      dev.alert = "SPEED ANOMALY: 58 km/h in Restricted Zone";
+      dev.alert = "SPEED ANOMALY: 58 km/h in Campus 6 Vault";
 
       this.createAlert(
         dev.id,
         dev.name,
         "SPEED_ANOMALY",
         "HIGH",
-        `⚡ SPEED ANOMALY: ${dev.name} clocked at 58 km/h (Limit: 15 km/h) in Restricted Vault`,
-        "High-Voltage Power Utility Vault"
+        `⚡ SPEED ANOMALY: ${dev.name} clocked at 58 km/h (Limit: 15 km/h) in Substation 6`,
+        "Campus 6 High-Voltage Substation & Lab Vault"
       );
     } else if (this.demoStep === 5) {
-      dev.lat = 40.7608;
-      dev.lon = -73.9905;
+      dev.lat = 20.3551;
+      dev.lon = 85.8182;
       dev.speed = 0;
       dev.status = "BREACH";
-      dev.alert = "SUSPECT SECURED IN UTILITY VAULT";
+      dev.alert = "SUSPECT INTERCEPTED AT GATE 6";
 
       setTimeout(() => {
         this.demoActive = false;

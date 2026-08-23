@@ -63,10 +63,9 @@ export default async function CommandCenter() {
     (i: { status: string }) =>
       i.status === "DETECTED" ||
       i.status === "PENDING" ||
+      i.status === "pending" ||
       i.status === "UNACKNOWLEDGED"
   ).length;
-
-  const recentIncidents: Incident[] = incidents.slice(0, 8) as Incident[];
 
   return (
     <>
@@ -236,11 +235,11 @@ export default async function CommandCenter() {
             </div>
 
             <div className="max-h-[510px] overflow-y-auto p-3">
-              {recentIncidents.length === 0 ? (
+              {incidents.length === 0 ? (
                 <EmptyIncidents />
               ) : (
                 <div className="space-y-2">
-                  {recentIncidents.map((incident) => (
+                  {incidents.map((incident) => (
                     <IncidentCard
                       key={incident.id}
                       incident={incident}
@@ -444,90 +443,83 @@ type Incident = {
   type: string;
   location: string | null;
   description: string | null;
+  assignedTo?: string | null;
 };
 
-function IncidentCard({ incident }: { incident: Incident }) {
+function IncidentCard({ incident }: { incident: any }) {
   const isCritical = incident.severity === "CRITICAL";
-  const isResolved =
-    incident.status === "RESOLVED" ||
-    incident.status === "CLOSED";
 
   return (
     <Drawer>
-      <DrawerTrigger>
-        <div role="button" tabIndex={0} className="group block w-full text-left cursor-pointer">
-          <div
-            className={`rounded-2xl border p-4 transition-all duration-300 ${
-              isCritical
-                ? "border-red-400/15 bg-red-400/[0.035] hover:border-red-400/30"
-                : "border-white/[0.06] bg-white/[0.018] hover:border-white/[0.12] hover:bg-white/[0.03]"
-            }`}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span
-                  className={`h-2 w-2 rounded-full ${
-                    isCritical
-                      ? "bg-red-400 shadow-[0_0_10px_rgba(248,113,113,.8)]"
-                      : isResolved
-                        ? "bg-emerald-400"
-                        : "bg-orange-400"
-                  }`}
-                />
+      <DrawerTrigger className="w-full text-left">
+        <div className="group cursor-pointer rounded-2xl border border-white/[0.06] bg-white/[0.018] p-3.5 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.03]">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  isCritical
+                    ? "bg-red-400 shadow-[0_0_10px_rgba(248,113,113,.8)] animate-pulse"
+                    : incident.status === "RESOLVED"
+                    ? "bg-emerald-400"
+                    : "bg-orange-400"
+                }`}
+              />
 
-                <span className="text-[8px] font-black uppercase tracking-[0.16em] text-slate-500">
-                  {incident.id}
-                </span>
-              </div>
-
-              <span className="text-[9px] text-slate-600">
-                {new Date(incident.createdAt).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+              <span className="text-[8.5px] font-black uppercase tracking-[0.16em] text-slate-400 font-mono">
+                {incident.id.substring(Math.max(0, incident.id.length - 8))}
               </span>
             </div>
 
-            <div className="mt-3">
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="truncate text-sm font-bold text-white">
-                  {incident.type}
-                </h3>
+            <span className="text-[9px] text-slate-500 font-mono">
+              {new Date(incident.createdAt).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          </div>
 
-                <span
-                  className={`shrink-0 rounded-md px-2 py-1 text-[8px] font-black uppercase tracking-wider ${
-                    isCritical
-                      ? "bg-red-400/10 text-red-300"
-                      : "bg-white/[0.06] text-slate-400"
-                  }`}
-                >
-                  {incident.severity}
-                </span>
-              </div>
+          <div className="mt-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="truncate text-xs sm:text-sm font-bold text-white">
+                {incident.type}
+              </h3>
 
-              <div className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-500">
-                <MapPin className="h-3 w-3" />
-                <span className="truncate">
-                  {incident.location || "Location unavailable"}
-                </span>
-              </div>
+              <span
+                className={`shrink-0 rounded-md px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider ${
+                  isCritical
+                    ? "bg-red-400/20 text-red-300 border border-red-500/30"
+                    : "bg-white/[0.06] text-slate-400"
+                }`}
+              >
+                {incident.severity}
+              </span>
             </div>
 
-            <div className="mt-4 flex items-center justify-between border-t border-white/[0.05] pt-3">
-              <div>
-                <div className="text-[7px] font-black uppercase tracking-[0.15em] text-slate-700">
-                  Status
-                </div>
+            <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-slate-400">
+              <MapPin className="h-3 w-3 text-slate-500 shrink-0" />
+              <span className="truncate">{incident.location || "Block C (Academic Quad)"}</span>
+            </div>
 
-                <div className="mt-1 text-[10px] font-bold text-slate-300">
-                  {incident.status}
-                </div>
-              </div>
+            {incident.description && (
+              <p className="mt-1 text-[10px] text-slate-500 line-clamp-1 italic">
+                "{incident.description}"
+              </p>
+            )}
+          </div>
 
-              <div className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-slate-600 transition group-hover:text-white">
-                Inspect
-                <ChevronRight className="h-3 w-3 transition group-hover:translate-x-0.5" />
-              </div>
+          <div className="mt-3 flex items-center justify-between border-t border-white/[0.05] pt-2">
+            <div>
+              <span className="text-[8px] font-black uppercase tracking-[0.14em] text-slate-500">
+                STATUS:{" "}
+              </span>
+              <span className="text-[9px] font-bold uppercase text-amber-400">
+                {incident.status}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-slate-500 group-hover:text-white transition">
+              Inspect
+              <ChevronRight className="h-3 w-3 group-hover:translate-x-0.5 transition" />
             </div>
           </div>
         </div>
@@ -535,30 +527,27 @@ function IncidentCard({ incident }: { incident: Incident }) {
 
       <DrawerContent className="border-white/[0.08] bg-[#07101b] text-white">
         <div className="mx-auto w-full max-w-xl p-6">
-
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-2">
                 <span
-                  className={`h-2 w-2 rounded-full ${
-                    isCritical ? "bg-red-400" : "bg-orange-400"
+                  className={`h-2.5 w-2.5 rounded-full ${
+                    isCritical ? "bg-red-400 animate-ping" : "bg-orange-400"
                   }`}
                 />
-
-                <span className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-600">
+                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
                   Incident {incident.id}
                 </span>
               </div>
-
-              <h2 className="mt-3 text-2xl font-black tracking-tight">
+              <h2 className="mt-2 text-2xl font-black tracking-tight text-white">
                 {incident.type}
               </h2>
             </div>
 
             <span
-              className={`rounded-lg px-3 py-2 text-[9px] font-black uppercase tracking-wider ${
+              className={`rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-wider ${
                 isCritical
-                  ? "bg-red-400/10 text-red-300"
+                  ? "bg-red-400/20 text-red-300 border border-red-500/30"
                   : "bg-white/[0.06] text-slate-400"
               }`}
             >
@@ -567,42 +556,26 @@ function IncidentCard({ incident }: { incident: Incident }) {
           </div>
 
           <div className="mt-6 grid grid-cols-2 gap-3">
+            <DetailItem label="Location" value={incident.location || "Block C (Academic Quad)"} />
+            <DetailItem label="Status" value={incident.status.toUpperCase()} />
+            <DetailItem label="Detected" value={new Date(incident.createdAt).toLocaleString()} />
             <DetailItem
-              label="Location"
-              value={incident.location || "Unavailable"}
-            />
-
-            <DetailItem
-              label="Status"
-              value={incident.status}
-            />
-
-            <DetailItem
-              label="Detected"
-              value={new Date(incident.createdAt).toLocaleString()}
-            />
-
-            <DetailItem
-              label="Source"
-              value="SCER Network"
+              label="Source Channel"
+              value={incident.reporterName || "SCER Audio Engine / Webhooks"}
             />
           </div>
 
           <div className="mt-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
-            <div className="text-[8px] font-black uppercase tracking-[0.18em] text-slate-600">
-              Description
+            <div className="text-[8px] font-black uppercase tracking-[0.18em] text-slate-500">
+              Distress Transcript / Details
             </div>
-
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              {incident.description || "No additional description available."}
+            <p className="mt-2 text-xs leading-5 text-slate-300">
+              {incident.description || "Live distress telemetry recorded from sensor network."}
             </p>
           </div>
 
           <div className="mt-5">
-            <IncidentActions
-              incidentId={incident.id}
-              currentStatus={incident.status}
-            />
+            <IncidentActions incidentId={incident.id} currentStatus={incident.status} />
           </div>
         </div>
       </DrawerContent>
@@ -610,20 +583,14 @@ function IncidentCard({ incident }: { incident: Incident }) {
   );
 }
 
-function DetailItem({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function DetailItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4">
-      <div className="text-[8px] font-black uppercase tracking-[0.16em] text-slate-700">
+    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-3.5">
+      <div className="text-[8px] font-black uppercase tracking-[0.16em] text-slate-500">
         {label}
       </div>
 
-      <div className="mt-2 break-words text-xs font-bold text-slate-300">
+      <div className="mt-1.5 break-words text-xs font-bold text-slate-200">
         {value}
       </div>
     </div>
@@ -680,12 +647,10 @@ function ModuleCard({
         </div>
 
         <div className="flex items-center gap-1.5 rounded-full border border-emerald-400/10 bg-emerald-400/[0.035] px-2 py-1">
-          <span
-            className={`h-1.5 w-1.5 rounded-full ${style.dot}`}
-          />
+          <span className={`h-1.5 w-1.5 rounded-full ${style.dot}`} />
 
           <span className="text-[7px] font-black uppercase tracking-wider text-emerald-300">
-            Ready
+            Online
           </span>
         </div>
       </div>
@@ -695,18 +660,14 @@ function ModuleCard({
           {subtitle}
         </div>
 
-        <h3 className="mt-1 text-base font-black text-white">
-          {title}
-        </h3>
+        <h3 className="mt-1 text-base font-black text-white">{title}</h3>
 
-        <p className="mt-2 text-xs leading-5 text-slate-500">
-          {description}
-        </p>
+        <p className="mt-2 text-xs leading-5 text-slate-500">{description}</p>
       </div>
 
       <div className="relative mt-5 flex items-center justify-between border-t border-white/[0.06] pt-4">
         <span className="text-[8px] font-black uppercase tracking-[0.16em] text-slate-600 transition group-hover:text-slate-300">
-          Open module
+          Open Module
         </span>
 
         <span className="grid h-7 w-7 place-items-center rounded-lg bg-white/[0.04] text-slate-600 transition group-hover:translate-x-1 group-hover:bg-white/[0.08] group-hover:text-white">
@@ -733,10 +694,8 @@ function PipelineStep({
   const colors = {
     blue: "text-sky-300 bg-sky-400/[0.06] border-sky-400/10",
     red: "text-red-300 bg-red-400/[0.06] border-red-400/10",
-    emerald:
-      "text-emerald-300 bg-emerald-400/[0.06] border-emerald-400/10",
-    violet:
-      "text-violet-300 bg-violet-400/[0.06] border-violet-400/10",
+    emerald: "text-emerald-300 bg-emerald-400/[0.06] border-emerald-400/10",
+    violet: "text-violet-300 bg-violet-400/[0.06] border-violet-400/10",
   };
 
   return (
@@ -752,13 +711,9 @@ function PipelineStep({
           {number}
         </div>
 
-        <div className="text-xs font-black text-white">
-          {title}
-        </div>
+        <div className="text-xs font-black text-white">{title}</div>
 
-        <div className="truncate text-[9px] text-slate-600">
-          {subtitle}
-        </div>
+        <div className="truncate text-[9px] text-slate-600">{subtitle}</div>
       </div>
     </div>
   );

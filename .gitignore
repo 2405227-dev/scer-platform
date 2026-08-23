@@ -42,4 +42,8 @@ next-env.d.ts
 # standalone tradable assets
 tradable-assets/
 
+# scratch & temporary files
+scratch/
+*.tmp*
+
 

@@ -17,8 +17,8 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ success: true, notificationId: notification.id, status: "DELIVERED" });
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to dispatch" }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ error: "Failed to dispatch", details: error?.message || String(error) }, { status: 500 });
   }
 }
 

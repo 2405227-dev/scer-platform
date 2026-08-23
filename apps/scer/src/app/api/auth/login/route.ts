@@ -97,6 +97,6 @@ export async function POST(req: Request) {
     return response;
   } catch (error: any) {
     console.error("[AUTH] Login error:", error);
-    return jsonWithCors({ error: "Internal login error" }, { status: 500 });
+    return jsonWithCors({ error: error?.message || "Internal login error", details: String(error) }, { status: 500 });
   }
 }

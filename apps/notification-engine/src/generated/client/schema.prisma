@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Notification {
+  id             String                    @id @default(auto()) @map("_id") @db.ObjectId
+  message        String
+  status         String
+  createdAt      DateTime                  @default(now())
+  recipientEmail String
+  recipientPhone String?
+  incidentId     String?
+  severity       String
+  channel        String                    @default("email")
+  attempts       Int                       @default(0)
+  maxAttempts    Int                       @default(3)
+  nextRetry      DateTime?
+  sentAt         DateTime?
+  readAt         DateTime?
+  updatedAt      DateTime                  @updatedAt
+  deliveryLogs   NotificationDeliveryLog[]
+}
+
+model NotificationTemplate {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  name    String
+  subject String
+  body    String
+  type    String
+}
+
+model NotificationDeliveryLog {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  notificationId String       @db.ObjectId
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  channel        String
+  status         String
+  response       String?
+  createdAt      DateTime     @default(now())
+}
+
+model NotificationRule {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  condition String
+  action    String
+}
+
+model NotificationRecipient {
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  email String
+}
+
+model NotificationAttempt {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  status    String
+  createdAt DateTime @default(now())
+}
+
+model EscalationPolicy {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  rules          String   @default("[]")
+  maxEscalations Int      @default(5)
+  enabled        Boolean  @default(true)
+  createdAt      DateTime @default(now())
+}
+
+model NotificationPreferences {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  responderId String
+  channels    String   @default("[]")
+  quietHours  String?
+  createdAt   DateTime @default(now())
+}
